@@ -2,17 +2,11 @@ package org.klinok066.gui;
 
 import java.awt.Dimension;
 import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 
-import javax.swing.JDesktopPane;
-import javax.swing.JFrame;
-import javax.swing.JInternalFrame;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.*;
 
 import org.klinok066.log.Logger;
 
@@ -68,12 +62,12 @@ public class MainApplicationFrame extends JFrame
     
 //    protected JMenuBar createMenuBar() {
 //        JMenuBar menuBar = new JMenuBar();
-// 
+//
 //        //Set up the lone menu.
 //        JMenu menu = new JMenu("Document");
 //        menu.setMnemonic(KeyEvent.VK_D);
 //        menuBar.add(menu);
-// 
+//
 //        //Set up the first menu item.
 //        JMenuItem menuItem = new JMenuItem("New");
 //        menuItem.setMnemonic(KeyEvent.VK_N);
@@ -82,7 +76,7 @@ public class MainApplicationFrame extends JFrame
 //        menuItem.setActionCommand("new");
 ////        menuItem.addActionListener(this);
 //        menu.add(menuItem);
-// 
+//
 //        //Set up the second menu item.
 //        menuItem = new JMenuItem("Quit");
 //        menuItem.setMnemonic(KeyEvent.VK_Q);
@@ -91,10 +85,10 @@ public class MainApplicationFrame extends JFrame
 //        menuItem.setActionCommand("quit");
 ////        menuItem.addActionListener(this);
 //        menu.add(menuItem);
-// 
+//
 //        return menuBar;
 //    }
-    
+
     private JMenuBar generateMenuBar()
     {
         JMenuBar menuBar = new JMenuBar();
@@ -122,6 +116,16 @@ public class MainApplicationFrame extends JFrame
             lookAndFeelMenu.add(crossplatformLookAndFeel);
         }
 
+        JMenu exitMenu = new JMenu("Выход");
+        exitMenu.setMnemonic(KeyEvent.VK_P);
+        exitMenu.getAccessibleContext().setAccessibleDescription("Закрытие приложения");
+        {
+            JMenuItem exitMenuItem = new JMenuItem("Выход");
+            exitMenuItem.addActionListener((event) -> handleExit());
+            exitMenu.add(exitMenuItem);
+        }
+
+
         JMenu testMenu = new JMenu("Тесты");
         testMenu.setMnemonic(KeyEvent.VK_T);
         testMenu.getAccessibleContext().setAccessibleDescription(
@@ -129,14 +133,13 @@ public class MainApplicationFrame extends JFrame
         
         {
             JMenuItem addLogMessageItem = new JMenuItem("Сообщение в лог", KeyEvent.VK_S);
-            addLogMessageItem.addActionListener((event) -> {
-                Logger.debug("Новая строка");
-            });
+            addLogMessageItem.addActionListener((event) -> Logger.debug("Новая строка"));
             testMenu.add(addLogMessageItem);
         }
 
         menuBar.add(lookAndFeelMenu);
         menuBar.add(testMenu);
+        menuBar.add(exitMenu);
         return menuBar;
     }
     
@@ -151,6 +154,16 @@ public class MainApplicationFrame extends JFrame
             | IllegalAccessException | UnsupportedLookAndFeelException e)
         {
             // just ignore
+        }
+    }
+    private void handleExit() {
+        int confirmed = JOptionPane.showConfirmDialog(this,
+                "Вы уверены, что хотите выйти из программы?", "Подтверждение выхода",
+                JOptionPane.YES_NO_OPTION);
+
+        if (confirmed == JOptionPane.YES_OPTION) {
+            dispose(); // Закрытие окна
+            System.exit(0); // Закрытие приложения
         }
     }
 }
