@@ -1,4 +1,4 @@
-package log;
+package org.klinok066.log;
 
 public interface LogChangeListener
 {

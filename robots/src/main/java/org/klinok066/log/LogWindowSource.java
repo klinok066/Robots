@@ -1,4 +1,4 @@
-package log;
+package org.klinok066.log;
 
 import java.util.ArrayList;
 import java.util.Collections;

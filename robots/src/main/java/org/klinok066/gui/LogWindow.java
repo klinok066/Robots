@@ -1,4 +1,4 @@
-package gui;
+package org.klinok066.gui;
 
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
@@ -7,9 +7,9 @@ import java.awt.TextArea;
 import javax.swing.JInternalFrame;
 import javax.swing.JPanel;
 
-import log.LogChangeListener;
-import log.LogEntry;
-import log.LogWindowSource;
+import org.klinok066.log.LogChangeListener;
+import org.klinok066.log.LogEntry;
+import org.klinok066.log.LogWindowSource;
 
 public class LogWindow extends JInternalFrame implements LogChangeListener
 {

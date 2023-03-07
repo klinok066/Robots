@@ -1,4 +1,4 @@
-package gui;
+package org.klinok066.gui;
 
 import java.awt.Color;
 import java.awt.EventQueue;

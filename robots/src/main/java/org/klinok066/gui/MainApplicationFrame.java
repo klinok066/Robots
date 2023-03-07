@@ -1,4 +1,4 @@
-package gui;
+package org.klinok066.gui;
 
 import java.awt.Dimension;
 import java.awt.Toolkit;
@@ -14,7 +14,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
-import log.Logger;
+import org.klinok066.log.Logger;
 
 /**
  * Что требуется сделать:
