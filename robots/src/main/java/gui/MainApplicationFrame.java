@@ -95,8 +95,8 @@ public class MainApplicationFrame extends JFrame
 //    }
     private void setClose() {
         int result = JOptionPane.showConfirmDialog(MainApplicationFrame.this,
-                "Закрытие приложения",
-                "Закрыть",
+                "Вы уверены?",
+                "Выход",
                 JOptionPane.YES_NO_OPTION);
         if (result == JOptionPane.YES_OPTION) {
             this.setDefaultCloseOperation(EXIT_ON_CLOSE);
