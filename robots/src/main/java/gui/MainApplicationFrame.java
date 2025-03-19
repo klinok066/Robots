@@ -3,9 +3,16 @@ package gui;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.*;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import javax.swing.*;
 
 import log.Logger;
+import serialization.Saveable;
+import serialization.State;
+import serialization.StateHandler;
 
 /**
  * Что требуется сделать:
@@ -16,7 +23,7 @@ import log.Logger;
 public class MainApplicationFrame extends JFrame
 {
     private final JDesktopPane desktopPane = new JDesktopPane();
-
+    private final String path = (System.getProperty("user.home") + "/state.json");
     public MainApplicationFrame() {
         //Make the big window be indented 50 pixels from each edge
         //of the screen.
@@ -27,14 +34,23 @@ public class MainApplicationFrame extends JFrame
                 screenSize.height - inset*2);
 
         setContentPane(desktopPane);
-
-
+        StateHandler stateHandler = new StateHandler(path);
         LogWindow logWindow = createLogWindow();
         addWindow(logWindow);
 
         GameWindow gameWindow = new GameWindow();
-        gameWindow.setSize(400,  400);
         addWindow(gameWindow);
+
+        Map<String, State> states = stateHandler.loadAllData();
+        File stateFile = new File(path);
+        if (stateFile.exists()) {
+            stateHandler = new StateHandler(path);
+            states = stateHandler.loadAllData();
+            logWindow.loadState(states.get("LogWindow"));
+            gameWindow.loadState(states.get("GameWindow"));
+        } else {
+            states = getDefaultStates();
+        }
 
         UIManager.put("OptionPane.yesButtonText","Да");
         UIManager.put("OptionPane.noButtonText","Нет");
@@ -48,6 +64,25 @@ public class MainApplicationFrame extends JFrame
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
     }
 
+    private Map<String, State> getDefaultStates() {
+        State logWindowState = new State();
+        logWindowState.setProperty("x", 10);
+        logWindowState.setProperty("y", 10);
+        logWindowState.setProperty("width", 300);
+        logWindowState.setProperty("height", 800);
+
+        State gameWindowState = new State();
+        gameWindowState.setProperty("x", 0);
+        gameWindowState.setProperty("y", 0);
+        gameWindowState.setProperty("width", 400);
+        gameWindowState.setProperty("height", 400);
+
+        State defaultStates = new State();
+        defaultStates.setProperty("LogWindow", logWindowState);
+        defaultStates.setProperty("GameWindow", gameWindowState);
+
+        return Map.of("LogWindow", logWindowState, "GameWindow", gameWindowState);
+    }
     protected LogWindow createLogWindow()
     {
         LogWindow logWindow = new LogWindow(Logger.getDefaultLogSource());
@@ -99,10 +134,18 @@ public class MainApplicationFrame extends JFrame
                 "Выход",
                 JOptionPane.YES_NO_OPTION);
         if (result == JOptionPane.YES_OPTION) {
+            StateHandler stateHandler = new StateHandler(path);
+            List<Saveable> saveableObjects = new ArrayList<>();
+
+            for (final JInternalFrame frame : desktopPane.getAllFrames()) {
+                if (frame instanceof Saveable) {
+                    saveableObjects.add((Saveable) frame);
+                }
+            }
+            stateHandler.save(saveableObjects);
             this.setDefaultCloseOperation(EXIT_ON_CLOSE);
             Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(
                     new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
-
         }
     }
 
