@@ -41,6 +41,9 @@ public class MainApplicationFrame extends JFrame
         GameWindow gameWindow = new GameWindow();
         addWindow(gameWindow);
 
+        CoordWindow coordWindow = new CoordWindow();
+        addWindow(coordWindow);
+
         Map<String, State> states = stateHandler.loadAllData();
         File stateFile = new File(path);
         if (stateFile.exists()) {
@@ -48,6 +51,7 @@ public class MainApplicationFrame extends JFrame
             states = stateHandler.loadAllData();
             logWindow.loadState(states.get("LogWindow"));
             gameWindow.loadState(states.get("GameWindow"));
+            coordWindow.loadState(states.get("CoordWindow"));
         } else {
             states = getDefaultStates();
         }
@@ -77,11 +81,18 @@ public class MainApplicationFrame extends JFrame
         gameWindowState.setProperty("width", 400);
         gameWindowState.setProperty("height", 400);
 
+        State coordWindowState = new State();
+        coordWindowState.setProperty("x", 0);
+        coordWindowState.setProperty("y", 0);
+        coordWindowState.setProperty("width", 400);
+        coordWindowState.setProperty("height", 400);
+
         State defaultStates = new State();
         defaultStates.setProperty("LogWindow", logWindowState);
         defaultStates.setProperty("GameWindow", gameWindowState);
+        defaultStates.setProperty("CoordWindow", coordWindowState);
 
-        return Map.of("LogWindow", logWindowState, "GameWindow", gameWindowState);
+        return Map.of("LogWindow", logWindowState, "GameWindow", gameWindowState, "CoordWindow", coordWindowState);
     }
     protected LogWindow createLogWindow()
     {
