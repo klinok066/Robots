@@ -10,6 +10,7 @@ import java.util.Map;
 import javax.swing.*;
 
 import log.Logger;
+import model.ModelRobot;
 import serialization.Saveable;
 import serialization.State;
 import serialization.StateHandler;
@@ -23,6 +24,7 @@ import serialization.StateHandler;
 public class MainApplicationFrame extends JFrame
 {
     private final JDesktopPane desktopPane = new JDesktopPane();
+
     private final String path = (System.getProperty("user.home") + "/state.json");
     public MainApplicationFrame() {
         //Make the big window be indented 50 pixels from each edge
@@ -38,10 +40,13 @@ public class MainApplicationFrame extends JFrame
         LogWindow logWindow = createLogWindow();
         addWindow(logWindow);
 
-        GameWindow gameWindow = new GameWindow();
+        ModelRobot robot = new ModelRobot();
+
+        GameWindow gameWindow = new GameWindow(robot);
         addWindow(gameWindow);
 
-        CoordWindow coordWindow = new CoordWindow();
+        CoordWindow coordWindow = new CoordWindow(robot);
+        robot.addObserver(coordWindow);
         addWindow(coordWindow);
 
         Map<String, State> states = stateHandler.loadAllData();
