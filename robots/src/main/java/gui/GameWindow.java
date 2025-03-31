@@ -2,9 +2,13 @@ package gui;
 
 import serialization.Saveable;
 import serialization.State;
-
+import model.ModelRobot;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.beans.PropertyVetoException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javax.swing.JInternalFrame;
 import javax.swing.JPanel;
@@ -12,11 +16,58 @@ import javax.swing.JPanel;
 public class GameWindow extends JInternalFrame implements Saveable
 {
     private final GameVisualizer m_visualizer;
-    public GameWindow()
+    private final ModelRobot modelRobot;
+    private final CoordWindow coordWindow;
+
+    private final Timer m_timer = initTimer();
+    private final static int durationRedraw = 10;
+
+    private static Timer initTimer()
+    {
+        Timer timer = new Timer("events generator", true);
+        return timer;
+    }
+    public GameWindow(ModelRobot robot)
     {
         super("Игровое поле", true, true, true, true);
-        m_visualizer = new GameVisualizer();
+        modelRobot = robot;
+        m_visualizer = new GameVisualizer(modelRobot, durationRedraw);
+        coordWindow = new CoordWindow(modelRobot);
+        m_timer.schedule(new TimerTask()
+        {
+            @Override
+            public void run()
+            {
+                m_visualizer.onRedrawEvent();
+            }
+        }, 0, 50);
+        m_timer.schedule(new TimerTask()
+        {
+            @Override
+            public void run()
+            {
+                m_visualizer.onModelUpdateEvent();
+            }
+        }, 0, durationRedraw);
+        addMouseListener(new MouseAdapter()
+        {
+            @Override
+            public void mouseClicked(MouseEvent e)
+            {
+                modelRobot.setTargetPosition(new Point(
+                        e.getX() - (getWidth() - m_visualizer.getWidth()) / 2,
+                        e.getY() + (getHeight() - m_visualizer.getHeight() - coordWindow.getHeight()) / 4
+                                - coordWindow.getHeight()
+                                - (getHeight() - m_visualizer.getHeight() - coordWindow.getHeight()))
+                );
+                repaint();
+            }
+        });
+
+        modelRobot.addObserver(coordWindow);
+        modelRobot.addObserver(m_visualizer);
         JPanel panel = new JPanel(new BorderLayout());
+        panel.add(coordWindow, BorderLayout.WEST);
         panel.add(m_visualizer, BorderLayout.CENTER);
         getContentPane().add(panel);
         pack();
