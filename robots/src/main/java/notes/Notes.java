@@ -45,7 +45,8 @@ public class Notes<Type> implements Iterable<Type> {
         private LinkedElement<Type> next;
         private LinkedElement<Type> curr;
 
-        private final Semaphore SEMAPHORE = new Semaphore(1, true);
+        private final Object synchronizedObject = new Object();
+
         /**
          * Создает новый объект класса NotesIterator с указанным элементом.
          *
@@ -62,20 +63,16 @@ public class Notes<Type> implements Iterable<Type> {
          * @return следующий существующий элемент в итерации
          */
         private LinkedElement<Type> findNext() {
-            try {
-                SEMAPHORE.acquire();
-            }   catch (InterruptedException e) {
-                e.printStackTrace();
+            synchronized (synchronizedObject) {
+
+                LinkedElement<Type> item = this.next;
+
+                while (item.exist && item.next != null) {
+                    item = item.next;
+                }
+
+                return item;
             }
-
-            LinkedElement<Type> item = this.next;
-
-            while (item.exist && item.next != null) {
-                item = item.next;
-            }
-
-            SEMAPHORE.release();
-            return item;
         }
 
         /**
@@ -126,7 +123,7 @@ public class Notes<Type> implements Iterable<Type> {
     private int size = 10;
     private int count;
     private int start;
-    private final Semaphore SEMAPHORE = new Semaphore(1, true);
+    private final Object synchronizedObject = new Object();
     /**
      * Создает новый объект класса Notes с заданным размером.
      * Если указанный размер превышает 10, устанавливается указанный размер,
@@ -176,20 +173,16 @@ public class Notes<Type> implements Iterable<Type> {
             return false;
         }
 
-        try {
-            SEMAPHORE.acquire();
-            Type other = (Type) o;
-            boolean isContains = items.containsKey(other);
-            SEMAPHORE.release();
+        synchronized (synchronizedObject) {
+            try {
+                Type other = (Type) o;
+                return items.containsKey(other);
+            } catch (ClassCastException e) {
+                // just ignore
+            }
 
-            return isContains;
-        } catch (ClassCastException e) {
-            // just ignore
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+            return false;
         }
-
-        return false;
     }
 
     /**
@@ -201,40 +194,45 @@ public class Notes<Type> implements Iterable<Type> {
      * @return true, если элемент успешно добавлен, в противном случае - false
      */
     public boolean add(Type element) {
-        try {
-            SEMAPHORE.acquire();
-            if (size == count) {
-                items.remove(head.value);
-                byIndex.remove(head.number);
-                head.exist = false;
-                head.next.prev = null;
-                head = head.next;
-                start = head.number;
-                count--;
+        synchronized (synchronizedObject) {
+            try {
+                if (size == count) {
+                    items.remove(head.value);
+                    byIndex.remove(head.number);
+                    head.exist = false;
+                    head.next.prev = null;
+                    head = head.next;
+                    start = head.number;
+                    count--;
+                }
+
+                LinkedElement<Type> current = placeholder;
+                current.value = element;
+                current.exist = true;
+
+                byIndex.put(current.number, element);
+                items.put(element, current);
+
+                current.next = new LinkedElement<>();
+
+                placeholder = current.next;
+                placeholder.prev = current;
+                placeholder.exist = false;
+                placeholder.number = current.number + 1;
+
+                count++;
+
+                return true;
+            } catch (
+                    UnsupportedOperationException |
+                    ClassCastException |
+                    NullPointerException |
+                    IllegalArgumentException e
+            ) {
+                return false;
             }
-
-            LinkedElement<Type> current = placeholder;
-            current.value = element;
-            current.exist = true;
-
-            byIndex.put(current.number, element);
-            items.put(element, current);
-
-            current.next = new LinkedElement<>();
-
-            placeholder = current.next;
-            placeholder.prev = current;
-            placeholder.exist = false;
-            placeholder.number = current.number + 1;
-
-            count++;
-
-            return true;
-        } catch (Exception e) {
-            return false;
         }
     }
-
 
     /**
      * Возвращает сегмент коллекции, начиная с указанного начального индекса
@@ -252,15 +250,10 @@ public class Notes<Type> implements Iterable<Type> {
 
         List<Type> segment = new ArrayList<>();
 
-        try {
-            SEMAPHORE.acquire();
-
+        synchronized (synchronizedObject) {
             for (int i = start + beginIndex; i <= start + endIndex; i++) {
                 segment.add(get(i));
             }
-            SEMAPHORE.release();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         }
 
         return segment;
@@ -272,18 +265,12 @@ public class Notes<Type> implements Iterable<Type> {
      * @return последний элемент коллекции или null, если коллекция пуста
      */
     public Type peek() {
-        try {
-            SEMAPHORE.acquire();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        synchronized (synchronizedObject) {
+            if (head == placeholder) {
+                return null;
+            }
+            return placeholder.prev.value;
         }
-        if (head == placeholder) {
-            return null;
-        }
-
-        Type value = placeholder.prev.value;
-        SEMAPHORE.release();
-        return value;
     }
 
     /**
@@ -292,39 +279,33 @@ public class Notes<Type> implements Iterable<Type> {
      * @return удаленный элемент или null, если коллекция пуста
      */
     public Type pop() {
-        try {
-            SEMAPHORE.acquire();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        if (head == placeholder) {
-            return null;
-        }
+        synchronized (synchronizedObject) {
+            if (head == placeholder) {
+                return null;
+            }
 
-        LinkedElement<Type> lastElement = placeholder.prev;
+            LinkedElement<Type> lastElement = placeholder.prev;
+            Type returnValue = lastElement.value;
+            items.remove(lastElement.value);
+            byIndex.remove(lastElement.number);
+            lastElement.exist = false;
 
-        Type returnValue = lastElement.value;
+            if (count > 1) {
+                lastElement.prev.next = placeholder;
+                placeholder.prev = lastElement.prev;
+                lastElement.prev = null;
 
-        items.remove(lastElement.value);
-        byIndex.remove(lastElement.number);
-        lastElement.exist = false;
+                count--;
 
-        if (count > 1) {
-            lastElement.prev.next = placeholder;
-            placeholder.prev = lastElement.prev;
-            lastElement.prev = null;
+                return returnValue;
+            }
 
             count--;
 
+            head = placeholder;
+            head.prev = null;
             return returnValue;
         }
-
-        count--;
-
-        head = placeholder;
-        head.prev = null;
-
-        return returnValue;
     }
 
     /**
@@ -335,22 +316,16 @@ public class Notes<Type> implements Iterable<Type> {
      * @throws IndexOutOfBoundsException если индекс выходит за границы коллекции
      */
     public Type get(int index) {
-        try {
-            SEMAPHORE.acquire();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        synchronized (synchronizedObject) {
+            Type value = byIndex.get(start + index);
+
+            if (value == null) {
+                throw new IndexOutOfBoundsException();
+            }
+
+            return value;
         }
-        Type value = byIndex.get(start + index);
-
-        SEMAPHORE.release();
-
-        if (value == null) {
-            throw new IndexOutOfBoundsException();
-        }
-
-        return value;
     }
-
     /**
      * Возвращает итератор для итерации по элементам коллекции.
      *
